@@ -16,6 +16,7 @@ function createOnly (method, max) {
     } else {
       calledByMethod[method]++; 
     }
+    console.log(calledByMethod[method], methodMax[method])
     if (Object.keys(calledByMethod).length && calledByMethod[method] > methodMax[method]) {
       var methods = Object.keys(calledByMethod).join(',');
       throw new Error(util.format('message type: %s cid: %s handle already called with %s', message.content.type, message.content.cid, methods));
@@ -44,17 +45,19 @@ module.exports = function (options) {
         var uniqueMessageId = message.content.cid;
 
         message.content.handle = {
-          ack: function ack () { 
+          ack: function ack (cb) { 
             onlyAckOnce(message);
 
             log('acking message %s', uniqueMessageId);
 
             channel.ack(message);  
+
+            if (cb) cb();
           },
-          acknowledge: function acknowledge () {
-            ack(); 
+          acknowledge: function acknowledge (cb) {
+            ack(cb); 
           },
-          reject: function reject () {
+          reject: function reject (cb) {
             onlyRejectMax(message);
             
             store.increment(uniqueMessageId, function (err) {
@@ -76,6 +79,7 @@ module.exports = function (options) {
                   
                   store.clear(uniqueMessageId, function (err) {
                     if (err) return self.emit('err');
+                    if (cb) cb();
                   });
 
                 } else {
@@ -83,6 +87,8 @@ module.exports = function (options) {
                   log('retrying message %s', uniqueMessageId);
                   
                   channel.reject(message, true); 
+
+                  if (cb) cb();
 
                 }
 
