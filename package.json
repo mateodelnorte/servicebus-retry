@@ -1,6 +1,6 @@
 {
   "name": "servicebus-retry",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "retry middleware for servicebus",
   "main": "index.js",
   "scripts": {
@@ -24,13 +24,13 @@
   "homepage": "https://github.com/mateodelnorte/servicebus-retry",
   "devDependencies": {
     "mocha": "^2.2.1",
-    "servicebus": "^1.0.1",
     "should": "^5.2.0"
   },
   "dependencies": {
     "debug": "^2.1.3",
     "extend": "^2.0.0",
     "hiredis": "^0.1.17",
-    "redis": "^0.12.1"
+    "redis": "^0.12.1",
+    "servicebus": "^1.0.1"
   }
 }
