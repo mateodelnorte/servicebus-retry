@@ -16,7 +16,6 @@ function createOnly (method, max) {
     } else {
       calledByMethod[method]++; 
     }
-    console.log(calledByMethod[method], methodMax[method])
     if (Object.keys(calledByMethod).length && calledByMethod[method] > methodMax[method]) {
       var methods = Object.keys(calledByMethod).join(',');
       throw new Error(util.format('message type: %s cid: %s handle already called with %s', message.content.type, message.content.cid, methods));
