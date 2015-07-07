@@ -4,6 +4,7 @@ var MemoryStore = require('./lib/memoryStore');
 var util = require('util');
 
 var maxRetries = 3;
+var namespace;
 
 var methodMax = {};
 
@@ -14,12 +15,12 @@ function createOnly (method, max) {
     if (calledByMethod[method] === undefined) {
       calledByMethod[method] = 1;
     } else {
-      calledByMethod[method]++; 
+      calledByMethod[method]++;
     }
     if (Object.keys(calledByMethod).length && calledByMethod[method] > methodMax[method]) {
       var methods = Object.keys(calledByMethod).join(',');
       throw new Error(util.format('message type: %s cid: %s handle already called with %s', message.content.type, message.content.cid, methods));
-    } 
+    }
   };
 }
 
@@ -28,6 +29,7 @@ module.exports = function (options) {
   options = options || { store: new MemoryStore() };
 
   if (options.maxRetries) maxRetries = options.maxRetries;
+  if (options.namespace) namespace = options.namespace;
 
   var store = options.store;
 
@@ -44,48 +46,50 @@ module.exports = function (options) {
         var uniqueMessageId = message.content.cid;
 
         message.content.handle = {
-          ack: function ack (cb) { 
+          ack: function ack (cb) {
             onlyAckOnce(message);
 
             log('acking message %s', uniqueMessageId);
 
-            channel.ack(message);  
+            channel.ack(message);
 
             if (cb) cb();
           },
           acknowledge: function acknowledge (cb) {
-            ack(cb); 
+            ack(cb);
           },
           reject: function reject (cb) {
             onlyRejectMax(message);
-            
-            store.increment(uniqueMessageId, function (err) {
+
+            var namespacedUniqueMessageId = namespace !== undefined ? util.format('%s-%s', namespace, uniqueMessageId) : uniqueMessageId;
+
+            store.increment(namespacedUniqueMessageId, function (err) {
               if (err) return self.emit('error', err);
 
-              store.get(uniqueMessageId, function (err, count) {
+              store.get(namespacedUniqueMessageId, function (err, count) {
                 if (err) return self.emit('error', err);
 
                 if (count > maxRetries) {
-              
+
                   var errorQueueName = util.format('%s.error', message.fields.routingKey);
-                  
+
                   log('sending message %s to error queue %s', uniqueMessageId, errorQueueName);
 
                   var buffer = new Buffer(JSON.stringify(message.content));
-                  
+
                   channel.sendToQueue(errorQueueName, buffer, extend(options, { headers: { rejected: count } }));
-                  channel.reject(message, false); 
-                  
-                  store.clear(uniqueMessageId, function (err) {
+                  channel.reject(message, false);
+
+                  store.clear(namespacedUniqueMessageId, function (err) {
                     if (err) return self.emit('err');
                     if (cb) cb();
                   });
 
                 } else {
-                  
+
                   log('retrying message %s', uniqueMessageId);
-                  
-                  channel.reject(message, true); 
+
+                  channel.reject(message, true);
 
                   if (cb) cb();
 

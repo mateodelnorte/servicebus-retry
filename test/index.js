@@ -2,6 +2,7 @@ var noop = function () {};
 var log = require('debug')('servicebus:test');
 var retry = require('../index');
 var should = require('should');
+var util = require('util');
 
 describe('retry', function() {
 
@@ -105,11 +106,11 @@ describe('retry', function() {
 
     var bus = require('servicebus').bus();
     bus.use(bus.correlate());
-    bus.use(retry({ 
+    bus.use(retry({
       store: new retry.RedisStore({
         host: process.env.REDIS_HOST,
         port: process.env.REDIS_PORT
-      }) 
+      })
     }));
 
     it('should throw if ack called more than once on message', function () {
@@ -198,6 +199,41 @@ describe('retry', function() {
       setTimeout(function () {
         bus.publish('test.servicebus.retry.4', { data: Math.random() });
       }, 1000);
+    });
+
+    it('should prepend unique message id with provided namespace', function (done) {
+
+      var store = new retry.RedisStore({
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT
+      });
+
+      var bus = require('servicebus').bus();
+      bus.use(bus.correlate());
+      bus.use(retry({
+        namespace: 'namespace',
+        store: store,
+        ttl: 3
+      }));
+
+      var count = 0;
+      bus.listen('test.servicebus.retry.5.error', { ack: true }, function (event) {
+        var key = util.format('%s-%s', 'namespace', event.cid);
+        event.handle.reject();
+        store.get(key, function (err, rejectCount) {
+          if (err) return done(err);
+          Number(rejectCount).should.eql(1);
+          store.clear(key, function (err) {
+            if (err) return done(err);
+            done();
+          });
+        });
+      });
+      setTimeout(function () {
+        bus.publish('test.servicebus.retry.5', { data: Math.random() });
+      }, 1000);
+
+
     });
 
   });
