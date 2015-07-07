@@ -205,15 +205,15 @@ describe('retry', function() {
 
       var store = new retry.RedisStore({
         host: process.env.REDIS_HOST,
-        port: process.env.REDIS_PORT
+        port: process.env.REDIS_PORT,
+        ttl: 3000
       });
 
       var bus = require('servicebus').bus();
       bus.use(bus.correlate());
       bus.use(retry({
         namespace: 'namespace',
-        store: store,
-        ttl: 3
+        store: store
       }));
 
       var count = 0;
