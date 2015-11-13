@@ -53,7 +53,7 @@ module.exports = function (options) {
 
             channel.ack(message);
 
-            if (cb) cb();
+            if (cb) return cb();
           },
           acknowledge: function acknowledge (cb) {
             ack(cb);
@@ -64,10 +64,16 @@ module.exports = function (options) {
             var namespacedUniqueMessageId = namespace !== undefined ? util.format('%s-%s', namespace, uniqueMessageId) : uniqueMessageId;
 
             store.increment(namespacedUniqueMessageId, function (err) {
-              if (err) return self.emit('error', err);
+              if (err) {
+                self.emit('error', err);
+                if (cb) return cb(err);
+              }
 
               store.get(namespacedUniqueMessageId, function (err, count) {
-                if (err) return self.emit('error', err);
+                if (err) {
+                  self.emit('error', err);
+                  if (cb) return cb(err);
+                }
 
                 if (count > maxRetries) {
 
@@ -81,8 +87,10 @@ module.exports = function (options) {
                   channel.reject(message, false);
 
                   store.clear(namespacedUniqueMessageId, function (err) {
-                    if (err) return self.emit('err');
-                    if (cb) cb();
+                    if (err) {
+                      self.emit('error', err);
+                      if (cb) return cb(err);
+                    }
                   });
 
                 } else {
@@ -91,7 +99,7 @@ module.exports = function (options) {
 
                   channel.reject(message, true);
 
-                  if (cb) cb();
+                  if (cb) return cb();
 
                 }
 
