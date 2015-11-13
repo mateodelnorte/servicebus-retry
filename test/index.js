@@ -218,7 +218,11 @@ describe('retry', function() {
             Number(rejectCount).should.eql(1);
             store.clear(key, function (err) {
               if (err) return done(err);
-              done();
+              bus.destroyListener('test.servicebus.retry.5', { force: true }).on('success', function () {
+                bus.destroyListener('test.servicebus.retry.5.error', { force: true }).on('success', function () {
+                  done();
+                });
+              });
             });
           });
         });
