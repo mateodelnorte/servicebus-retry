@@ -29,8 +29,8 @@
   "dependencies": {
     "debug": "^2.1.3",
     "extend": "^2.0.0",
-    "hiredis": "^0.2.0",
-    "redis": "^0.12.1",
+    "hiredis": "^0.4.1",
+    "redis": "^2.3.0",
     "servicebus": "^1.0.9"
   }
 }
