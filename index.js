@@ -77,7 +77,7 @@ module.exports = function (options) {
 
                 if (count > maxRetries) {
 
-                  var errorQueueName = util.format('%s.error', message.fields.routingKey);
+                  var errorQueueName = util.format('%s.error', options.queueName);
 
                   log('sending message %s to error queue %s', uniqueMessageId, errorQueueName);
 

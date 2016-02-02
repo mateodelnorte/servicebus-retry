@@ -204,6 +204,26 @@ describe('retry', function() {
       }, 100);
     });
 
+    it('rejected wildcard subscribe messages should retry until max retries', function (done){
+      var count = 0;
+      var subscription = bus.subscribe('test.servicebus.retry.wildcard.*', { ack: true }, function (event) {
+        count++;
+        event.handle.reject();
+      });
+      bus.listen('test.servicebus.retry.wildcard.*.error', { ack: true }, function (event) {
+        count.should.equal(4); // one send and three retries
+        event.handle.ack();
+        // subscription.unsubscribe(function () {
+          bus.destroyListener('test.servicebus.retry.wildcard.*.error').on('success', function () {
+            done();
+          });
+        // });
+      });
+      setTimeout(function () {
+        bus.publish('test.servicebus.retry.wildcard.5', { data: Math.random() });
+      }, 100);
+    });
+
     it('should prepend unique message id with provided namespace', function (done) {
 
       var count = 0;
