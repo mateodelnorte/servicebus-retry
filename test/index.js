@@ -284,7 +284,7 @@ describe('retry', function() {
 
     })
 
-    describe('setRepliesRemaining', function () {
+    describe('setRetriesRemaining', function () {
 
       it('should provide count of retries remaining', function (done) {
 
