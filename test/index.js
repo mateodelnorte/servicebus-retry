@@ -44,7 +44,9 @@ describe('retry', function() {
         content: {
           cid: 1
         },
-        fields: {},
+        fields: {
+          redelivered: false
+        },
         properties: {
           headers: {}
         }
@@ -224,39 +226,119 @@ describe('retry', function() {
       }, 100);
     });
 
-    it('should prepend unique message id with provided namespace', function (done) {
+  });
 
-      var count = 0;
+  describe('options', function () {
 
-      bus.listen('test.servicebus.retry.5', { ack: true }, function (event) {
-        count++;
-        event.handle.reject(function (err) {
-          if (err) return done(err);
-          var key = util.format('%s-%s', 'namespace', event.cid);
-          store.get(key, function (err, rejectCount) {
-            if (err) return done(err);
-            Number(rejectCount).should.eql(1);
-            store.clear(key, function (err) {
+    describe('namespace', function () {
+
+      var store = new retry.RedisStore({
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT
+      });
+
+      var bus = require('servicebus').bus();
+      bus.use(bus.correlate());
+      bus.use(retry({
+        namespace: 'namespace',
+        store: store
+      }));
+
+      it('should prepend unique message id with provided namespace', function (done) {
+
+        var count = 0;
+
+        bus.listen('test.servicebus.retry.5.error', { ack: true }, function (event) {
+        });
+
+        bus.listen('test.servicebus.retry.5', { ack: true }, function (event) {
+          count++;
+
+          if (count === 4) {
+            var key = util.format('%s-%s', 'namespace', event.cid);
+            store.get(key, function (err, rejectCount) {
               if (err) return done(err);
-              bus.destroyListener('test.servicebus.retry.5', { force: true }).on('success', function () {
-                bus.destroyListener('test.servicebus.retry.5.error', { force: true }).on('success', function () {
-                  done();
+              Number(rejectCount).should.eql(count - 1);
+              store.clear(key, function (err) {
+                if (err) return done(err);
+                bus.destroyListener('test.servicebus.retry.5', { force: true }).on('success', function () {
+                  bus.destroyListener('test.servicebus.retry.5.error', { force: true }).on('success', function () {
+                    done();
+                  });
                 });
               });
             });
+          }
+
+          event.handle.reject(function (err) {
+            if (err) return done(err);
           });
+
         });
+
+        setTimeout(function () {
+          bus.send('test.servicebus.retry.5', { my: 'event' });
+        }, 100);
+
       });
 
-      bus.listen('test.servicebus.retry.5.error', { ack: true }, function (event) {
-      });
+    })
 
-      setTimeout(function () {
-        bus.send('test.servicebus.retry.5', { my: 'event' });
-      }, 100);
+    describe('setRepliesRemaining', function () {
+
+      it('should provide count of retries remaining', function (done) {
+
+        var maxRetries = 5;
+
+        var store = new retry.RedisStore({
+          host: process.env.REDIS_HOST,
+          port: process.env.REDIS_PORT
+        });
+
+        var bus = require('servicebus').bus();
+        bus.use(bus.correlate());
+        bus.use(retry({
+          maxRetries: maxRetries,
+          namespace: 'namespace',
+          setRetriesRemaining: true,
+          store: store
+        }));
+        bus.use(bus.package());
+
+        var count = 0;
+
+        bus.listen('test.servicebus.retry.6', { ack: true }, function (event) {
+          count++;
+
+          Number(count).should.eql(maxRetries - event.retriesRemaining + 1);
+
+          if (event.retriesRemaining === 0) {
+
+            bus.destroyListener('test.servicebus.retry.6', { force: true }).on('success', function () {
+              bus.destroyListener('test.servicebus.retry.6.error', { force: true }).on('success', function () {
+                done();
+              });
+            });
+
+          }
+
+          event.handle.reject(function (err) {
+            if (err) return done(err);
+          });
+
+        });
+
+        bus.listen('test.servicebus.retry.6.error', { ack: true }, function (event) {
+        });
+
+        setTimeout(function () {
+          bus.send('test.servicebus.retry.6', { my: 'event' }, { ack: true });
+        }, 100);
+
+      });
 
     });
 
-  });
+    });
 
 });
