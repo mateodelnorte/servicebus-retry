@@ -109,8 +109,9 @@ module.exports = function (options) {
                   store.clear(namespacedUniqueMessageId, function (err) {
                     if (err) {
                       self.emit('error', err);
-                      if (cb) return cb(err);
                     }
+
+                    if (cb) return cb(err);
                   });
 
                 } else {
