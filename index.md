@@ -1,3 +1,7 @@
+---
+layout: index
+---
+
 # servicebus-retry
 
 servicebus-retry adds message acknowledge, reject, and retry capability to servicebus messages. A MemoryStore is available for testing and scenarios where processes to not exit/restart when a message is rejected. A RedisStore is available for multiprocess and crash-oriented design, where processes purposefully crash after a message reject and restart. 
