@@ -1,6 +1,6 @@
 {
   "name": "servicebus-retry",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "retry middleware for servicebus",
   "main": "index.js",
   "scripts": {
