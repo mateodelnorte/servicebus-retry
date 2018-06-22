@@ -3,7 +3,10 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 
 test:
+	docker-compose up -d
+	sleep 10
 	$(MAKE) DEBUG= test-debug
+	docker-compose down
 
 test-debug:
 	DEBUG=$(DEBUG) \
