@@ -12,6 +12,6 @@ test-debug:
 	DEBUG=$(DEBUG) \
 	REDIS_HOST=$(REDIS_HOST) \
 	REDIS_PORT=$(REDIS_PORT) \
-	./node_modules/.bin/mocha -R spec --recursive
+	./node_modules/.bin/mocha -R spec --recursive --exit
 
 .PHONY: test test-debug
