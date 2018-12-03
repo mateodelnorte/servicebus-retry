@@ -24,10 +24,10 @@
   "homepage": "https://github.com/mateodelnorte/servicebus-retry",
   "devDependencies": {
     "mocha": "^5.2.0",
-    "should": "^5.2.0"
+    "should": "^13.2.3"
   },
   "dependencies": {
-    "debug": "^3.1.0",
+    "debug": "^4.1.0",
     "extend": "^3.0.1",
     "hiredis": "^0.5.0",
     "redis": "^2.8.0",
