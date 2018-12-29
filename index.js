@@ -33,7 +33,7 @@ module.exports = function (options = {}) {
     return options.namespace !== undefined ? util.format('%s-%s', options.namespace, uniqueMessageId) : uniqueMessageId;
   }
 
-  function setRetriesRemaining (uniqueMessageId, message, cb) {
+  async function setRetriesRemaining (uniqueMessageId, message, cb) {
     log('setting remaining retries for ', uniqueMessageId, message)
     if ( ! options.setRetriesRemaining) {
       return cb(null, message);
@@ -47,7 +47,7 @@ module.exports = function (options = {}) {
     } else if ( message.offset ) {
       // log('kafka detected!')
 
-      if (store.hasBeenAcked(uniqueMessageId)) {
+      if (await store.hasBeenAcked(uniqueMessageId)) {
         log('this message has already been processed')
         message.hasBeenAcked = true
         return cb(null, message)
@@ -89,7 +89,7 @@ module.exports = function (options = {}) {
         log('processing message')
 
         message.content.handle = {
-          ack: function ack (cb) {
+          ack: async function ack (cb) {
             onlyAckOnce(message);
 
             log('acking message %s', uniqueMessageId);
@@ -104,7 +104,7 @@ module.exports = function (options = {}) {
             if (channel.ack) {
               channel.ack(message);
             } else {
-              store.ack(uniqueMessageId)
+              return await store.ack(uniqueMessageId, cb);
             }
 
             if (cb) return cb();

@@ -27,6 +27,7 @@
     "should": "13.2.3"
   },
   "dependencies": {
+    "bluebird": "^3.5.3",
     "debug": "4.1.0",
     "extend": "3.0.1",
     "hiredis": "0.5.0",
