@@ -46,14 +46,15 @@ module.exports = function (options = {}) {
       });
     } else if ( message.offset ) {
       // log('kafka detected!')
+      const namespacedUniqueMessageId = getNamespacedUniqueMessageId(uniqueMessageId);
 
-      if (await store.hasBeenAcked(uniqueMessageId)) {
+      if (await store.hasBeenAcked(namespacedUniqueMessageId)) {
         log('this message has already been processed')
         message.hasBeenAcked = true
         return cb(null, message)
       }
 
-      return store.get(getNamespacedUniqueMessageId(uniqueMessageId), function (err, count) {
+      return store.get(namespacedUniqueMessageId, function (err, count) {
         if (err) return cb(err);
         message.content.retriesRemaining = maxRetries - count;
         return cb(null, message);
@@ -104,7 +105,7 @@ module.exports = function (options = {}) {
             if (channel.ack) {
               channel.ack(message);
             } else {
-              return await store.ack(uniqueMessageId, cb);
+              return await store.ack(getNamespacedUniqueMessageId(uniqueMessageId), cb);
             }
 
             if (cb) return cb();
