@@ -339,6 +339,6 @@ describe('retry', function() {
 
     });
 
-    });
+  });
 
 });
