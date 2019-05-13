@@ -339,6 +339,30 @@ describe('retry', function() {
 
     });
 
+    describe('acknowledgement', function () {
+      it('should provide handle if options.acknowledgement is provided instead of options.ack', function () {
+        var channel = {
+          ack: function () {},
+          publish: function () {}
+        };
+        var message = {
+          content: {
+            cid: 1
+          },
+          fields: {},
+          properties: {
+            headers: {}
+          }
+        };
+        var middleware = retry().handleIncoming;
+        middleware(channel, message, { acknowledge: true }, function (err, channel, message, options, next) {
+          (function () {
+            message.content.handle.ack();
+          }).should.not.throw(Error);
+        });
+      });
+    });
+
     });
 
 });
