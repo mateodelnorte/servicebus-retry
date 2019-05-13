@@ -52,9 +52,10 @@ module.exports = function (options) {
   return {
     handleIncoming: function handleIncoming (channel, msg, options, next) {
 
+      options = options || {}
       options.ack = options.ack? options.ack : options.acknowledge || false;
       
-      if ( ! options || ! options.ack ) return next(null, channel, msg, options);
+      if ( ! options.ack ) return next(null, channel, msg, options);
 
       var self = this;
       var onlyAckOnce = createOnly('ack', 1);
